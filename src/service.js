@@ -19,7 +19,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { Service } from '@deepseek-ai/cordis'
 import { askJevQuestions, buildChoiceQuestion, resolveJevApiKey } from './client.js'
-import { loadSettings } from './settings.js'
+import { loadSettings, saveSettings } from './settings.js'
 
 /** 凭证缓存的有效期：改完 credentials 文件不必重启。 */
 const KEY_TTL_MS = 10_000
@@ -128,6 +128,35 @@ export class JevService extends Service {
       ...(answer && typeof answer.confidence === 'number' ? { confidence: answer.confidence } : {}),
       ...(answer && answer.probabilities && typeof answer.probabilities === 'object' ? { probabilities: answer.probabilities } : {}),
     }
+  }
+
+  /**
+   * 读本服务自己的设置（**未脱敏**，仅供宿主侧的设置页读写用）。
+   *
+   * 路由必须走这里而不是直接 loadSettings()：服务可能带着注入的 settingsFile
+   * （测试、或将来多 profile 各一套），两边读不同的文件就是两个真相来源。
+   *
+   * @returns {Promise<object>} 规范化设置。
+   */
+  async loadSettings() {
+    return await loadSettings(this.loaderConfig, this.#settingsOptions())
+  }
+
+  /**
+   * 写本服务自己的设置。
+   * @param {object} patch - 要覆盖的字段。
+   * @returns {Promise<object>} 写入后的设置。
+   */
+  async saveSettings(patch) {
+    return await saveSettings(patch, this.#settingsOptions())
+  }
+
+  /**
+   * 丢弃凭证缓存。设置页刚改完 key 时调用，下一次读立刻反映新值。
+   * @returns {void}
+   */
+  refresh() {
+    this.keyCache = { credential: undefined, at: 0 }
   }
 
   /** 设置文件的读取选项。 */

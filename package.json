@@ -10,7 +10,8 @@
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
-    "./client": "./src/client.js",
+    "./client": "./lib/client.js",
+    "./ask": "./src/client.js",
     "./package.json": "./package.json"
   },
   "dsh": {
@@ -20,14 +21,15 @@
     "client": {
       "platform": "web",
       "inject": [
-        "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-ui-settings",
-        "@deepseek-ai/dsh-api-remotes"
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-settings"
       ]
     }
   },
   "files": [
     "src",
+    "lib",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"

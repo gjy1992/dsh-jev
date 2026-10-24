@@ -34,12 +34,12 @@ if (jev) {
 ### 2. 纯函数（不需要装插件）
 
 ```js
-import { askJevQuestions, rankOptions } from 'dsh-jev/client'
+import { askJevQuestions, rankOptions } from 'dsh-jev/ask'
 const { answers } = await askJevQuestions({ state, questions })
 const top = rankOptions(answers.decision, ['a', 'b']).slice(0, 2)
 ```
 
-`dsh-jev/client` 零宿主依赖（只依赖 `node:fs` / `node:path` / `yaml`）。
+`dsh-jev/ask` 零宿主依赖（只依赖 `node:fs` / `node:path` / `yaml`）。
 
 ## 服务 API
 
@@ -84,6 +84,27 @@ const top = rankOptions(answers.decision, ['a', 'b']).slice(0, 2)
 
 凭证解析顺序：`apiKey` → 环境变量 `apiKeyEnv` → `TYPESAFE_API_KEY` → 凭证文件 `refs`。
 **没有 key 时 `ask()` 抛 `JEV_NO_KEY`，插件本身照常装载。**
+
+## 两个维护入口，别搞混
+
+| 子路径 | 文件 | 谁用 |
+| --- | --- | --- |
+| `dsh-jev` | `src/index.js` | 宿主 loader（`cordis.patch.yml`） |
+| `dsh-jev/client` | `lib/client.js` | **浏览器**：web boot 按 `exports["./client"]` 找它 |
+| `dsh-jev/ask` | `src/client.js` | **Node**：其他插件 `import { askJevQuestions } from 'dsh-jev/ask'` |
+
+`./client` 必须是 `window.__ModuleLoader__.load({ id, factory })` 信封。它一旦是普通 ESM
+模块，启动日志就会出现 `dsh-jev/client.js … loaded without registering`——这正是早期把
+Node 侧的纯函数文件放在 `./client` 上造成的。
+
+## 设置页
+
+设置 → **Jev 引擎**。字段：启用开关、端点、模型、凭证变量名、超时、
+`jev_ask` 是否对模型开放、以及 API Key（写入即走凭证缝，不回显）。
+
+浏览器端经 `/api/jev` 走 HTTP 信封（`{ endpoint, args }` → `{ ok, value|error }`），
+这与 `dsh-agents-group` 同一条已验证的通道；路由在宿主侧用 `ctx.inject(['connection'])`
+惰性挂载，没有 Connection 的 profile 不受影响。
 
 ## 安装
 

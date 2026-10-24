@@ -15,6 +15,7 @@
  * 调用方无法把它们指向别处。
  */
 
+import { API_PATH, createApiHandler } from './api.js'
 import { JevService } from './service.js'
 import { jevAskTool } from './tool.js'
 
@@ -47,6 +48,23 @@ export function apply(ctx, config) {
 
   // 服务是**核心产出**：注册名 'jev'。继承了 Service，所以 fiber 卸载时自动撤销。
   const jev = new JevService(ctx, { loaderConfig: resolved })
+
+  // 浏览器端（设置页）用的 HTTP 路由。**不进 inject**：没有 Connection 的 profile
+  // （headless / tui）会整个卡在 PENDING，而工具面在那里本来就该照常工作。
+  const handler = createApiHandler(ctx, resolved, jev)
+  if (typeof ctx.inject === 'function') {
+    ctx.inject(['connection'], (scope) => {
+      scope.effect(
+        () => scope.connection.fetch.register({
+          path: API_PATH,
+          methods: ['POST'],
+          requestBody: 'buffered',
+          fetch: async (request) => await handler(request),
+        }),
+        'dsh-jev: http route',
+      )
+    })
+  }
 
   if (resolved.tool === false) return
 
