@@ -1,0 +1,50 @@
+{
+  "name": "dsh-jev",
+  "version": "0.1.0",
+  "description": "DSH 的 Jev（TypeSafe System One 判定模型）服务：ctx.jev 供其他插件调用，另附 jev_ask 工具与设置页。",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./src/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-api-remotes"
+      ]
+    }
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --import ./test/register-hooks.mjs --test \"test/*.test.js\"",
+    "check": "node --check src/index.js && node --test test/"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-tools": ">=0.1.7-rc.2"
+  },
+  "dependencies": {
+    "yaml": "^2.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gjy1992/dsh-jev.git"
+  }
+}

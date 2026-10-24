@@ -1,0 +1,6 @@
+# dsh-jev bundle patch —— 把宿主半（exports "."）插进 profile 的 loader 名单。
+#   dsh plugin --profile <name> add link:<本仓库路径>
+
+- insert:
+    - id: jev
+      name: 'dsh-jev'
