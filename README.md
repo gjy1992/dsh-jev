@@ -97,10 +97,17 @@ const top = rankOptions(answers.decision, ['a', 'b']).slice(0, 2)
 模块，启动日志就会出现 `dsh-jev/client.js … loaded without registering`——这正是早期把
 Node 侧的纯函数文件放在 `./client` 上造成的。
 
-## 设置页
+## 设置页在哪
 
-设置 → **Jev 引擎**。字段：启用开关、端点、模型、凭证变量名、超时、
-`jev_ask` 是否对模型开放、以及 API Key（写入即走凭证缝，不回显）。
+**设置 → 插件 → dsh-jev**（插件详情页里，描述与组件列表之间），不是设置页的顶层栏目。
+
+实现方式：客户端把组件注册到 **`plugins.bundle.config`** 这个 **keyed** 槽，
+键就是包的 npm 名 `dsh-jev`。槽的所有者是 `@deepseek-ai/dsh-client-ui-plugin-manager`
+（契约在它的 `src/client/slot-contract.ts`）；插件页把这个槽渲染在
+`data-plugin-config` 段里，并且只传 `view: 'page'`。
+
+字段：启用开关、端点、模型、凭证变量名、超时、`jev_ask` 是否对模型开放、
+以及 API Key（写入即走凭证缝，不回显）。
 
 浏览器端经 `/api/jev` 走 HTTP 信封（`{ endpoint, args }` → `{ ok, value|error }`），
 这与 `dsh-agents-group` 同一条已验证的通道；路由在宿主侧用 `ctx.inject(['connection'])`

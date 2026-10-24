@@ -31,7 +31,7 @@ async function loadClient() {
   return captured
 }
 
-test('浏览器端：是 ModuleLoader 信封，且注册了 settings.section', async () => {
+test('浏览器端：是 ModuleLoader 信封，且在 plugins.bundle.config 上注册了 dsh-jev', async () => {
   const registrations = []
   const captured = await loadClient()
   const calls = []
@@ -46,10 +46,11 @@ test('浏览器端：是 ModuleLoader 信封，且注册了 settings.section', a
   assert.equal(typeof mod.apply, 'function')
   assert.deepEqual(mod.inject, ['slots'])
   mod.apply(ctx)
-  assert.deepEqual(calls, ['settings.section'])
+  assert.deepEqual(calls, ['plugins.bundle.config'])
   assert.equal(registrations.length, 1)
-  assert.equal(registrations[0].spec.name, 'settings.section')
-  assert.equal(registrations[0].spec.id, 'jev')
+  assert.equal(registrations[0].spec.name, 'plugins.bundle.config')
+  // keyed 槽：key 必须是包的 npm 名，否则插件页找不到这块。
+  assert.equal(registrations[0].spec.key, 'dsh-jev')
   assert.equal(typeof registrations[0].component, 'function')
 })
 
