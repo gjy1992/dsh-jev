@@ -9,9 +9,9 @@
  *
  * 消费方式（两种都要能用）：
  *   - 装得上服务：inject(['jev']) 或 ctx.get('jev')；
- *   - 只要纯函数：import { askJevQuestions } from 'dsh-jev/client'（零宿主依赖）。
+ *   - 只要纯函数：import { askJevQuestions } from 'dsh-jev/ask'（零宿主依赖）。
  *
- * 工具 jev_ask 默认对模型开放（设置里可关）；端点与凭证永远取自本插件的设置，
+ * 工具 jev_ask 与插件同生共死（enabled 一个闸）；端点与凭证永远取自本插件的设置，
  * 调用方无法把它们指向别处。
  */
 
@@ -32,8 +32,9 @@ export const inject = ['tools']
 
 /** 插件配置（cordis patch 里给的 config 是设置文件的默认值层）。 */
 export const CONFIG_DEFAULTS = Object.freeze({
+  // **只有一个闸**：enabled 同时决定服务、工具与 HTTP 路由。
+  // 再给工具一个独立开关就是两个真值来源，能配出「插件开着却没有工具」的半开状态。
   enabled: true,
-  tool: true,
 })
 
 /**
@@ -66,16 +67,8 @@ export function apply(ctx, config) {
     })
   }
 
-  if (resolved.tool === false) return
-
-  // 工具默认开放。设置里 tool:false 时 serviceOf 返回 undefined，工具本身仍注册——
-  // 让模型看见「被关了」比让它看不见这个工具更容易排障。
-  ctx.tools.register(jevAskTool({
-    serviceOf: async () => {
-      const settings = await jev.settings()
-      return settings.tool === false || settings.enabled === false ? undefined : jev
-    },
-  }))
+  // 工具与插件同生共死：能走到这里就说明它是开着的。
+  ctx.tools.register(jevAskTool({ serviceOf: async () => jev }))
 
   // 提示词是可选增强：没有 systemPrompt 服务时静默跳过。
   const prompt = typeof ctx.get === 'function' ? ctx.get('systemPrompt') : undefined

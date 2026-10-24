@@ -19,8 +19,6 @@ export const DEFAULT_SETTINGS = Object.freeze({
   apiKeyEnv: DEFAULT_API_KEY_ENV,
   credentialsPath: '',
   timeoutMs: DEFAULT_TIMEOUT_MS,
-  /** jev_ask 工具是否对模型开放。 */
-  tool: true,
   /** 允许模型只写 state + question 的一句话形态（不给 questions 时由服务包成单问题）。 */
   simple: true,
 })
@@ -48,7 +46,6 @@ export function normalizeSettings(raw) {
     apiKeyEnv: nonEmpty(source.apiKeyEnv) ?? DEFAULT_SETTINGS.apiKeyEnv,
     credentialsPath: typeof source.credentialsPath === 'string' ? source.credentialsPath.trim() : '',
     timeoutMs: positiveInt(source.timeoutMs, DEFAULT_SETTINGS.timeoutMs),
-    tool: source.tool !== false,
     simple: source.simple !== false,
   }
 }

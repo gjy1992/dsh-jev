@@ -56,7 +56,7 @@ const top = rankOptions(answers.decision, ['a', 'b']).slice(0, 2)
 
 ## 工具 `jev_ask`
 
-默认对模型开放（设置里 `tool: false` 可关）。两种写法二选一：
+**与插件同生共死**：`enabled` 同时决定服务与工具，没有独立的工具开关。两种写法二选一：
 
 ```jsonc
 // 结构化
@@ -80,7 +80,6 @@ const top = rankOptions(answers.decision, ['a', 'b']).slice(0, 2)
 | `apiKeyEnv` | `COMMAND_CODE_API_KEY` | 凭证环境变量名 |
 | `credentialsPath` | `$DSH_HOME/.credentials.yaml` | 凭证文件 |
 | `timeoutMs` | `20000` | 单次超时 |
-| `tool` | `true` | `jev_ask` 是否对模型开放 |
 
 凭证解析顺序：`apiKey` → 环境变量 `apiKeyEnv` → `TYPESAFE_API_KEY` → 凭证文件 `refs`。
 **没有 key 时 `ask()` 抛 `JEV_NO_KEY`，插件本身照常装载。**
@@ -106,8 +105,8 @@ Node 侧的纯函数文件放在 `./client` 上造成的。
 （契约在它的 `src/client/slot-contract.ts`）；插件页把这个槽渲染在
 `data-plugin-config` 段里，并且只传 `view: 'page'`。
 
-字段：启用开关、端点、模型、凭证变量名、超时、`jev_ask` 是否对模型开放、
-以及 API Key（写入即走凭证缝，不回显）。
+字段：启用开关、端点、模型、凭证变量名、超时、以及 API Key（写入即走凭证缝，不回显）。
+**启用 = 同时提供 `ctx.jev` 与 `jev_ask`**，不设第二个开关。
 
 浏览器端经 `/api/jev` 走 HTTP 信封（`{ endpoint, args }` → `{ ok, value|error }`），
 这与 `dsh-agents-group` 同一条已验证的通道；路由在宿主侧用 `ctx.inject(['connection'])`

@@ -80,8 +80,8 @@ async function dispatch(ctx, pluginConfig, jev, endpoint, args) {
  */
 async function settingsSet(ctx, pluginConfig, jev, args) {
   const patch = {}
+  // 只有 enabled 一个闸：它同时管服务、工具与路由，没有独立的 tool 开关。
   if (typeof args.enabled === 'boolean') patch.enabled = args.enabled
-  if (typeof args.tool === 'boolean') patch.tool = args.tool
   for (const key of ['baseUrl', 'model', 'apiKeyEnv']) {
     if (typeof args[key] === 'string' && args[key].trim() !== '') patch[key] = args[key].trim()
   }

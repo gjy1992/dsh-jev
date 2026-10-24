@@ -69,11 +69,12 @@ test('apply：enabled=false 时既不注册服务也不注册工具', () => {
   assert.deepEqual(ctx.registered, [])
 })
 
-test('apply：loader 配置 tool=false 时一个工具都不注册', () => {
+test('apply：只有一个 enabled 闸，tool 不再是开关', () => {
+  // enabled 同时决定服务与工具；再给工具一个开关就是两个真值来源。
   const ctx = fakeContext()
   apply(ctx, { tool: false })
-  assert.ok(ctx.get('jev') instanceof JevService, '服务仍然要在')
-  assert.deepEqual(ctx.registered, [])
+  assert.ok(ctx.get('jev') instanceof JevService, 'tool 不再是闸：服务照常提供')
+  assert.deepEqual(ctx.registered.map((t) => t.name), ['jev_ask'], 'tool 不再是闸：工具照常注册')
 })
 
 test('apply：没有 systemPrompt 服务时照常装载', () => {
@@ -151,12 +152,12 @@ test('tool：没有服务时返回 missing，不抛错', async () => {
   assert.deepEqual(result, { ok: false, reason: 'missing' })
 })
 
-test('tool：设置里 tool=false 时返回 missing（工具被关了，不是不存在）', async () => {
+test('settings：不再有 tool 字段（旧配置里的 tool 被忽略）', async () => {
   const { settingsFile, env } = await sandbox({ tool: false })
   const jev = new JevService(fakeContext(), { settingsFile, env })
-  // 直接核对 serviceOf 的判定：设置里关了就该拿不到服务。
   const settings = await jev.settings()
-  assert.equal(settings.tool, false)
+  assert.equal('tool' in settings, false, 'tool 已从设置里消失')
+  assert.equal(settings.enabled, true, '旧配置里的 tool:false 不影响 enabled')
 })
 
 test('settings：文件层覆盖 loader 层，缺省值兜底', async () => {
@@ -177,10 +178,9 @@ test('settings：坏文件不炸，退回默认值', async () => {
 
 test('settings：saveSettings 落盘后可读回，key 不被其它字段冲掉', async () => {
   const { settingsFile } = await sandbox()
-  await saveSettings({ model: 'saved', tool: false }, { path: settingsFile })
+  await saveSettings({ model: 'saved' }, { path: settingsFile })
   const back = JSON.parse(await readFile(settingsFile, 'utf8'))
   assert.equal(back.model, 'saved')
-  assert.equal(back.tool, false)
 })
 
 /** 用服务直接造一个工具实例（绕过 apply，便于逐例控制）。 */

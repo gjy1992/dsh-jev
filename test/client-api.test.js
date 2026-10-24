@@ -86,9 +86,9 @@ test('HTTP settings.set：落盘并可读回；apiKey 走凭证缝', async () =>
   const jev = new JevService(ctx, { settingsFile, env })
   const handler = createApiHandler(ctx, {}, jev)
 
-  const saved = await envelope(handler, 'settings.set', { model: 'jev-new', timeoutMs: 5000, tool: false })
+  const saved = await envelope(handler, 'settings.set', { model: 'jev-new', timeoutMs: 5000 })
   assert.equal(saved.config.model, 'jev-new')
-  assert.equal(saved.config.tool, false)
+  assert.equal('tool' in saved.config, false, '不再有独立的 tool 开关')
   assert.equal(saved.keyAction, 'unchanged')
 
   const withKey = await envelope(handler, 'settings.set', { apiKey: 'sk-abc' })
