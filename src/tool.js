@@ -21,9 +21,15 @@ export const TOOL_DESCRIPTION =
   + '返回里 answers 是原始的 id → { choice, confidence, probabilities }；'
   + 'probabilities 是**全分布**，一次调用就能按概率挑出前 k 项，不要为了排序反复调用。'
 
-/** 统一的返回值渲染：把 JSON 给模型看，但去掉噪音。 */
+/**
+ * 统一的返回值渲染：把 JSON 给模型看。
+ *
+ * 输出 schema 写成**开放对象**：答案的 id 是调用方自己起的（decision / who / …），
+ * 形状只能开放；但根必须是 object，让「永远是对象」由 schema 保证，
+ * 而不是靠执行体自觉。
+ */
 const JSON_OUTPUT = {
-  schema: { type: 'json' },
+  schema: { type: 'object', additionalProperties: true },
   render: (_args, value) => [{ type: 'text', text: JSON.stringify(value, null, 2) }],
 }
 
@@ -57,7 +63,11 @@ export function jevAskTool(options) {
         description: '要评估的文本：聊天记录、待分类的消息、候选说明都可以。Jev 全部的问题都基于它。',
       },
       questions: {
+        // 值 schema DSL **要求 object 节点显式声明 openness**（编译器硬校验，
+        // 缺了就 JsonSchemaError）。这里是「问题 id → 问题体」的自由映射，
+        // 所以 openness 为 true；问题体的具体形状由服务侧校验（至少 2 个 criteria）。
         type: 'object',
+        additionalProperties: true,
         description: '结构化写法：问题 id → { type:"choice", instructions, criteria }。'
           + 'criteria 是「候选名 → 一句说明」，每问至少 2 项。与 question/options 二选一。',
       },

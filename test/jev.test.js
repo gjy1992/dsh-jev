@@ -4,26 +4,25 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { Context } from '@deepseek-ai/cordis'
 import { apply, jevAskTool, loadSettings, normalizeSettings, saveSettings } from '../src/index.js'
 import { JevService } from '../src/service.js'
 
-/** 造一个够用的宿主上下文：记下注册的服务、工具与提示词段落。 */
+/**
+ * 造一个够用的宿主上下文。
+ *
+ * 用**真实 cordis Context**：JevService 继承真的 Service，构造函数要
+ * ctx.reflect.provide()。手搓的假对象会在这里直接 TypeError（2026-10-24 踩过）。
+ */
 function fakeContext(options = {}) {
   const registered = []
-  const services = new Map()
   const contexts = []
-  const ctx = {
-    registered,
-    tools: { register: (tool) => registered.push(tool) },
-    provide: (name, value) => services.set(name, value),
-    get: (name) => {
-      if (name === 'systemPrompt' && options.systemPrompt !== false) {
-        return { context: (item) => { contexts.push(item); return () => {} } }
-      }
-      return services.get(name)
-    },
+  const ctx = new Context()
+  ctx.provide('tools', { register: (tool) => registered.push(tool) })
+  if (options.systemPrompt !== false) {
+    ctx.provide('systemPrompt', { context: (item) => { contexts.push(item); return () => {} } })
   }
-  ctx.services = services
+  ctx.registered = registered
   ctx.contexts = contexts
   return ctx
 }
@@ -58,7 +57,7 @@ async function sandbox(extra = {}) {
 test('apply：注册服务 jev 与工具 jev_ask（默认开放）', () => {
   const ctx = fakeContext()
   apply(ctx, {})
-  assert.ok(ctx.services.get('jev') instanceof JevService, '必须提供 ctx.jev')
+  assert.ok(ctx.get('jev') instanceof JevService, '必须提供 ctx.jev')
   assert.deepEqual(ctx.registered.map((t) => t.name), ['jev_ask'])
   assert.equal(ctx.contexts.length, 1, '有 systemPrompt 时补一段说明')
 })
@@ -66,21 +65,21 @@ test('apply：注册服务 jev 与工具 jev_ask（默认开放）', () => {
 test('apply：enabled=false 时既不注册服务也不注册工具', () => {
   const ctx = fakeContext()
   apply(ctx, { enabled: false })
-  assert.equal(ctx.services.has('jev'), false)
+  assert.equal(ctx.get('jev'), undefined)
   assert.deepEqual(ctx.registered, [])
 })
 
 test('apply：loader 配置 tool=false 时一个工具都不注册', () => {
   const ctx = fakeContext()
   apply(ctx, { tool: false })
-  assert.ok(ctx.services.get('jev') instanceof JevService, '服务仍然要在')
+  assert.ok(ctx.get('jev') instanceof JevService, '服务仍然要在')
   assert.deepEqual(ctx.registered, [])
 })
 
 test('apply：没有 systemPrompt 服务时照常装载', () => {
   const ctx = fakeContext({ systemPrompt: false })
   apply(ctx, {})
-  assert.ok(ctx.services.get('jev') instanceof JevService)
+  assert.ok(ctx.get('jev') instanceof JevService)
   assert.deepEqual(ctx.registered.map((t) => t.name), ['jev_ask'])
 })
 
@@ -154,15 +153,9 @@ test('tool：没有服务时返回 missing，不抛错', async () => {
 
 test('tool：设置里 tool=false 时返回 missing（工具被关了，不是不存在）', async () => {
   const { settingsFile, env } = await sandbox({ tool: false })
-  const ctx = fakeContext()
-  const jev = new JevService(ctx, { settingsFile, env })
-  const registered = []
-  apply({
-    ...ctx,
-    tools: { register: (t) => registered.push(t) },
-  }, {})
+  const jev = new JevService(fakeContext(), { settingsFile, env })
   // 直接核对 serviceOf 的判定：设置里关了就该拿不到服务。
-  const settings = await new JevService(ctx, { settingsFile, env }).settings()
+  const settings = await jev.settings()
   assert.equal(settings.tool, false)
 })
 

@@ -1,13 +1,9 @@
 /**
- * `@deepseek-ai/cordis` 的最小替身：只保留本插件用到的契约。
+ * `@deepseek-ai/cordis` 在测试里的版本。
  *
- * 真实实现里 Service 的构造函数会 ctx.reflect.provide(name, this)，并把注册的
- * 生命周期绑到当前 fiber 上。这里只保留「注册进 ctx」这一点，够测可见性。
+ * **不要造假 Context / Service**：`@deepseek-ai/dsh-tools` 会 `import { Context }
+ * from '@deepseek-ai/cordis'`，一个只有 Service 的假桩会让它在链接期就崩。
+ * 这里全部转给真实实现；真实 cordis 能在裸 Node 里直接 new Context()，
+ * 测出来的就是宿主里那份行为。
  */
-export class Service {
-  constructor(ctx, name) {
-    this.ctx = ctx
-    this.name = name
-    if (typeof ctx.provide === 'function') ctx.provide(name, this)
-  }
-}
+export * from 'file:///F:/gitProject/dsh-plugins/dsh-jev/node_modules/@deepseek-ai/cordis/lib/index.js'
